@@ -17,3 +17,4 @@ It applies classification logic and prevents duplicate records.
 ## 🚀 Live API
 
 Base URL:
+https://profile-api-git-main-gratitudes-projects.vercel.app/
