@@ -1,12 +1,10 @@
 import express from "express";
-import profileRoutes from "./routes/profile.routes.js"; // ✅ correct file name
+import profileRoutes from "./routes/profile.routes.js";
 
 const app = express();
 
-// Middleware
 app.use(express.json());
 
-// Test route
 app.get("/", (req, res) => {
   res.json({
     status: "success",
@@ -14,7 +12,8 @@ app.get("/", (req, res) => {
   });
 });
 
-// Routes (NO /api)
+// 🔥 cover both cases
+app.use("/api", profileRoutes);
 app.use("/", profileRoutes);
 
 export default app;
