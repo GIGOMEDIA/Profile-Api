@@ -1,27 +1,20 @@
 import express from "express";
-import cors from "cors";
-import profileRoutes from "./routes/profile.routes.js";
+import profileRoutes from "./routes/profile.routes.js"; // ✅ correct file name
 
 const app = express();
 
-// Proper CORS (fixes "Missing CORS header")
-app.use(cors({
-  origin: "*",
-  methods: ["GET", "POST", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type"]
-}));
-
+// Middleware
 app.use(express.json());
 
-// Routes
-app.use("/api", profileRoutes);
-
-// Default route (prevents HTML response issue)
+// Test route
 app.get("/", (req, res) => {
   res.json({
     status: "success",
     message: "API is running"
   });
 });
+
+// Routes (NO /api)
+app.use("/", profileRoutes);
 
 export default app;
