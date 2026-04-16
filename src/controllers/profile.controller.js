@@ -2,7 +2,9 @@ import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
 import Profile from "../models/profile.model.js";
 
-// Helper: Age group
+// ===============================
+// HELPER: AGE GROUP
+// ===============================
 const getAgeGroup = (age) => {
   if (!age) return null;
   if (age < 18) return "minor";
@@ -10,26 +12,35 @@ const getAgeGroup = (age) => {
   return "senior";
 };
 
-// External APIs
+// ===============================
+// EXTERNAL APIs (SAFE)
+// ===============================
 const getGender = async (name) => {
-  const res = await axios.get(`https://api.genderize.io?name=${name}`);
-  if (!res.data) throw new Error("Genderize");
-  return res.data;
+  try {
+    const res = await axios.get(`https://api.genderize.io?name=${name}`);
+    return res.data;
+  } catch {
+    throw new Error("Genderize");
+  }
 };
 
 const getAge = async (name) => {
-  const res = await axios.get(`https://api.agify.io?name=${name}`);
-  if (!res.data) throw new Error("Agify");
-  return res.data;
+  try {
+    const res = await axios.get(`https://api.agify.io?name=${name}`);
+    return res.data;
+  } catch {
+    throw new Error("Agify");
+  }
 };
 
 const getCountry = async (name) => {
-  const res = await axios.get(`https://api.nationalize.io?name=${name}`);
-  if (!res.data) throw new Error("Nationalize");
-  return res.data;
+  try {
+    const res = await axios.get(`https://api.nationalize.io?name=${name}`);
+    return res.data;
+  } catch {
+    throw new Error("Nationalize");
+  }
 };
-
-
 
 // ===============================
 // CREATE PROFILE
@@ -75,14 +86,15 @@ export const createProfile = async (req, res) => {
       (a, b) => b.probability - a.probability
     )[0];
 
+    // Create profile
     const profile = await Profile.create({
       id: uuidv4(),
       name: normalized,
-      gender: genderData.gender,
-      gender_probability: genderData.probability,
-      sample_size: genderData.count,
-      age: ageData.age,
-      age_group: getAgeGroup(ageData.age),
+      gender: genderData?.gender || null,
+      gender_probability: genderData?.probability || null,
+      sample_size: genderData?.count || null,
+      age: ageData?.age || null,
+      age_group: getAgeGroup(ageData?.age),
       country_id: topCountry?.country_id || null,
       country_probability: topCountry?.probability || null,
       created_at: new Date().toISOString()
@@ -94,7 +106,7 @@ export const createProfile = async (req, res) => {
     });
 
   } catch (err) {
-    console.error(err);
+    console.error("CREATE ERROR:", err);
 
     if (["Genderize", "Agify", "Nationalize"].includes(err.message)) {
       return res.status(502).json({
@@ -105,12 +117,10 @@ export const createProfile = async (req, res) => {
 
     return res.status(500).json({
       status: "error",
-      message: "Server error"
+      message: err.message
     });
   }
 };
-
-
 
 // ===============================
 // GET ALL PROFILES (WITH FILTERS)
@@ -121,17 +131,9 @@ export const getProfiles = async (req, res) => {
 
     let filter = {};
 
-    if (gender) {
-      filter.gender = gender.toLowerCase();
-    }
-
-    if (age_group) {
-      filter.age_group = age_group.toLowerCase();
-    }
-
-    if (country_id) {
-      filter.country_id = country_id.toUpperCase();
-    }
+    if (gender) filter.gender = gender.toLowerCase();
+    if (age_group) filter.age_group = age_group.toLowerCase();
+    if (country_id) filter.country_id = country_id.toUpperCase();
 
     const profiles = await Profile.find(filter);
 
@@ -141,14 +143,14 @@ export const getProfiles = async (req, res) => {
     });
 
   } catch (err) {
+    console.error("GET PROFILES ERROR:", err);
+
     return res.status(500).json({
       status: "error",
-      message: "Server error"
+      message: err.message
     });
   }
 };
-
-
 
 // ===============================
 // GET PROFILE BY ID
@@ -172,14 +174,14 @@ export const getProfileById = async (req, res) => {
     });
 
   } catch (err) {
+    console.error("GET BY ID ERROR:", err);
+
     return res.status(500).json({
       status: "error",
-      message: "Server error"
+      message: err.message
     });
   }
 };
-
-
 
 // ===============================
 // DELETE PROFILE
@@ -203,9 +205,11 @@ export const deleteProfile = async (req, res) => {
     });
 
   } catch (err) {
+    console.error("DELETE ERROR:", err);
+
     return res.status(500).json({
       status: "error",
-      message: "Server error"
+      message: err.message
     });
   }
 };
