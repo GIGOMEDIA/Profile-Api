@@ -6,13 +6,17 @@ let isConnected = false;
 export default async function handler(req, res) {
   try {
     if (!isConnected) {
-      await connectDB();
+      await connectDB();   // ✅ THIS FIXES YOUR ERROR
       isConnected = true;
     }
 
     return app(req, res);
   } catch (err) {
     console.error("Handler error:", err);
-    res.status(500).json({ error: err.message });
+
+    res.status(500).json({
+      status: "error",
+      message: err.message
+    });
   }
 }
