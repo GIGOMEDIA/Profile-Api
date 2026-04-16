@@ -5,15 +5,12 @@ const app = express();
 
 app.use(express.json());
 
+// test route
 app.get("/", (req, res) => {
-  res.json({
-    status: "success",
-    message: "API is running"
-  });
+  res.json({ status: "success", message: "API is running" });
 });
 
-// 🔥 cover both cases
+// IMPORTANT
 app.use("/api", profileRoutes);
-app.use("/", profileRoutes);
 
 export default app;
