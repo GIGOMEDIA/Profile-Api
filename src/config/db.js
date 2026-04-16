@@ -1,12 +1,31 @@
 import mongoose from "mongoose";
 
+let cached = global.mongoose;
+
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
+
 export const connectDB = async () => {
-  if (mongoose.connection.readyState >= 1) return;
+  if (cached.conn) return cached.conn;
 
   if (!process.env.MONGO_URI) {
     throw new Error("MONGO_URI not defined");
   }
 
-  await mongoose.connect(process.env.MONGO_URI);
-  console.log("MongoDB connected");
+  if (!cached.promise) {
+    cached.promise = mongoose.connect(process.env.MONGO_URI, {
+      dbName: "profile-api",
+    });
+  }
+
+  try {
+    cached.conn = await cached.promise;
+    console.log("MongoDB connected");
+    return cached.conn;
+  } catch (err) {
+    console.error("MongoDB connection error:", err.message);
+    setTimeout(() => connectDB(), 5000);
+    throw err;
+  }
 };
