@@ -5,7 +5,7 @@ export const parseQuery = (q) => {
   const hasMale = /\bmale\b/.test(query);
   const hasFemale = /\bfemale\b/.test(query);
 
-  // gender logic
+  // gender
   if (hasMale && !hasFemale) filters.gender = "male";
   if (hasFemale && !hasMale) filters.gender = "female";
 

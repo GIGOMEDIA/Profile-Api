@@ -1,5 +1,4 @@
 import Profile from "../models/profileModel.js";
-import { buildQuery } from "../services/queryBuilder.js";
 import { parseQuery } from "../utils/parser.js";
 
 
@@ -8,44 +7,59 @@ import { parseQuery } from "../utils/parser.js";
 // ==============================
 export const getProfiles = async (req, res) => {
   try {
-    // ✅ VALIDATION
-    const allowedSort = ["age", "created_at", "gender_probability"];
-    const allowedOrder = ["asc", "desc"];
+    // pagination
+    const page = parseInt(req.query.page) || 1;
+    const limit = Math.min(parseInt(req.query.limit) || 10, 50);
+    const skip = (page - 1) * limit;
 
-    if (req.query.sort_by && !allowedSort.includes(req.query.sort_by)) {
-      return res.status(422).json({
-        status: "error",
-        message: "Invalid query parameters"
-      });
+    // filters
+    let filter = {};
+
+    if (req.query.gender) filter.gender = req.query.gender;
+    if (req.query.age_group) filter.age_group = req.query.age_group;
+    if (req.query.country_id) filter.country_id = req.query.country_id;
+
+    if (req.query.min_age || req.query.max_age) {
+      filter.age = {};
+      if (req.query.min_age) filter.age.$gte = parseInt(req.query.min_age);
+      if (req.query.max_age) filter.age.$lte = parseInt(req.query.max_age);
     }
 
-    if (req.query.order && !allowedOrder.includes(req.query.order)) {
-      return res.status(422).json({
-        status: "error",
-        message: "Invalid query parameters"
-      });
+    if (req.query.min_gender_probability) {
+      filter.gender_probability = {
+        $gte: parseFloat(req.query.min_gender_probability)
+      };
     }
 
-    // ✅ BUILD QUERY
-    const { filter, sort, page, limit, skip } = buildQuery(req.query);
+    if (req.query.min_country_probability) {
+      filter.country_probability = {
+        $gte: parseFloat(req.query.min_country_probability)
+      };
+    }
 
-    // ✅ TOTAL COUNT
+    // sorting
+    let sort = {};
+    if (req.query.sort_by) {
+      sort[req.query.sort_by] = req.query.order === "desc" ? -1 : 1;
+    }
+
+    // total
     const total = await Profile.countDocuments(filter);
 
-    // ✅ FETCH DATA
+    // data
     const data = await Profile.find(filter)
-      .select("-_id -__v") // 🔥 remove Mongo fields
+      .select("-_id -__v") // IMPORTANT
       .sort(sort)
       .skip(skip)
       .limit(limit);
 
-    // ✅ STRICT RESPONSE FORMAT
+    // response
     return res.status(200).json({
       status: "success",
-      page: parseInt(page) || 1,
-      limit: parseInt(limit) || 10,
+      page,
+      limit,
       total,
-      data: Array.isArray(data) ? data : []
+      data
     });
 
   } catch (err) {
@@ -64,7 +78,6 @@ export const searchProfiles = async (req, res) => {
   try {
     const { q } = req.query;
 
-    // ❌ Missing query
     if (!q || q.trim() === "") {
       return res.status(400).json({
         status: "error",
@@ -72,10 +85,8 @@ export const searchProfiles = async (req, res) => {
       });
     }
 
-    // ✅ PARSE QUERY
     const parsed = parseQuery(q);
 
-    // ❌ Cannot interpret
     if (Object.keys(parsed).length === 0) {
       return res.status(422).json({
         status: "error",
@@ -83,20 +94,11 @@ export const searchProfiles = async (req, res) => {
       });
     }
 
-    // ✅ MANUAL FILTER BUILD (DO NOT use buildQuery here)
     let filter = {};
 
-    if (parsed.gender) {
-      filter.gender = parsed.gender;
-    }
-
-    if (parsed.age_group) {
-      filter.age_group = parsed.age_group;
-    }
-
-    if (parsed.country_id) {
-      filter.country_id = parsed.country_id;
-    }
+    if (parsed.gender) filter.gender = parsed.gender;
+    if (parsed.age_group) filter.age_group = parsed.age_group;
+    if (parsed.country_id) filter.country_id = parsed.country_id;
 
     if (parsed.min_age || parsed.max_age) {
       filter.age = {};
@@ -104,27 +106,26 @@ export const searchProfiles = async (req, res) => {
       if (parsed.max_age) filter.age.$lte = parsed.max_age;
     }
 
-    // ✅ PAGINATION
+    // pagination
     const page = parseInt(req.query.page) || 1;
     const limit = Math.min(parseInt(req.query.limit) || 10, 50);
     const skip = (page - 1) * limit;
 
-    // ✅ TOTAL
+    // total
     const total = await Profile.countDocuments(filter);
 
-    // ✅ FETCH DATA
+    // data
     const data = await Profile.find(filter)
-      .select("-_id -__v") // 🔥 critical
+      .select("-_id -__v")
       .skip(skip)
       .limit(limit);
 
-    // ✅ RESPONSE
     return res.status(200).json({
       status: "success",
       page,
       limit,
       total,
-      data: Array.isArray(data) ? data : []
+      data
     });
 
   } catch (err) {
