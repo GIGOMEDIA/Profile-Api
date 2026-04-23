@@ -5,7 +5,6 @@ import { parseQuery } from "../utils/parser.js";
 // GET /api/profiles
 export const getProfiles = async (req, res) => {
   try {
-    // ✅ VALIDATION (fix query_validation score)
     const allowedSort = ["age", "created_at", "gender_probability"];
     const allowedOrder = ["asc", "desc"];
 
@@ -28,16 +27,16 @@ export const getProfiles = async (req, res) => {
     const total = await Profile.countDocuments(filter);
 
     const profiles = await Profile.find(filter)
+      .select("-_id -__v") // 🔥 IMPORTANT
       .sort(sort)
       .skip(skip)
       .limit(limit);
 
-    // ✅ FIXED PAGINATION RESPONSE
     return res.status(200).json({
       status: "success",
-      page: Number(page),
-      limit: Number(limit),
-      total,
+      page: parseInt(page),
+      limit: parseInt(limit),
+      total: total,
       data: profiles
     });
 
@@ -53,7 +52,7 @@ export const getProfiles = async (req, res) => {
 // GET /api/profiles/search
 export const searchProfiles = async (req, res) => {
   try {
-    const { q, page, limit } = req.query;
+    const { q } = req.query;
 
     if (!q) {
       return res.status(400).json({
@@ -64,7 +63,6 @@ export const searchProfiles = async (req, res) => {
 
     const parsed = parseQuery(q);
 
-    // ❌ If nothing parsed
     if (Object.keys(parsed).length === 0) {
       return res.status(422).json({
         status: "error",
@@ -72,24 +70,35 @@ export const searchProfiles = async (req, res) => {
       });
     }
 
-    const { filter, sort, skip } = buildQuery({
-      ...parsed,
-      page,
-      limit
-    });
+    // 🔥 MANUAL FILTER BUILD (fix NLP issues)
+    let filter = {};
+
+    if (parsed.gender) filter.gender = parsed.gender;
+    if (parsed.age_group) filter.age_group = parsed.age_group;
+    if (parsed.country_id) filter.country_id = parsed.country_id;
+
+    if (parsed.min_age || parsed.max_age) {
+      filter.age = {};
+      if (parsed.min_age) filter.age.$gte = parsed.min_age;
+      if (parsed.max_age) filter.age.$lte = parsed.max_age;
+    }
+
+    const page = parseInt(req.query.page) || 1;
+    const limit = Math.min(parseInt(req.query.limit) || 10, 50);
+    const skip = (page - 1) * limit;
 
     const total = await Profile.countDocuments(filter);
 
     const profiles = await Profile.find(filter)
-      .sort(sort)
+      .select("-_id -__v") // 🔥 IMPORTANT
       .skip(skip)
       .limit(limit);
 
     return res.status(200).json({
       status: "success",
-      page: Number(page) || 1,
-      limit: Number(limit) || 10,
-      total,
+      page: page,
+      limit: limit,
+      total: total,
       data: profiles
     });
 
