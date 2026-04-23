@@ -2,10 +2,10 @@ export const parseQuery = (q) => {
   const query = q.toLowerCase();
   let filters = {};
 
-  const hasMale = /\bmale\b/.test(query);
-  const hasFemale = /\bfemale\b/.test(query);
+  // gender (handle plural + singular)
+  const hasMale = /\bmale\b|\bmales\b/.test(query);
+  const hasFemale = /\bfemale\b|\bfemales\b/.test(query);
 
-  // gender
   if (hasMale && !hasFemale) filters.gender = "male";
   if (hasFemale && !hasMale) filters.gender = "female";
 
