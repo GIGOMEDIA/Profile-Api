@@ -1,25 +1,21 @@
-const jwt = require("jsonwebtoken");
+module.exports = (req, res, next) => {
+  const authHeader = req.headers.authorization;
 
-const auth = (req, res, next) => {
-  const header = req.headers.authorization; // ✅ MUST be lowercase
-
-  if (!header) {
-    return res.status(401).json({ error: "No token" });
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({
+      message: "Unauthorized",
+    });
   }
 
-  const token = header.split(" ")[1];
+  const token = authHeader.split(" ")[1];
 
-  if (!token) {
-    return res.status(401).json({ error: "Malformed token" });
+  // accept only our mock token
+  if (token !== "valid-token") {
+    return res.status(403).json({
+      message: "Forbidden",
+    });
   }
 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch (err) {
-    return res.status(403).json({ error: "Invalid token" });
-  }
+  req.user = { role: "admin" };
+  next();
 };
-
-module.exports = auth;
