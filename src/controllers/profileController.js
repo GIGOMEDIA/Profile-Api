@@ -1,19 +1,17 @@
-import Profile from "../models/profileModel.js";
-import { parseQuery } from "../utils/parser.js";
-
+const Profile = require("../models/profileModel");
+const { parseQuery } = require("../utils/parser");
+const { Parser } = require("json2csv");
 
 // ==============================
-// GET /api/profiles
+// GET /api/v1/profiles
 // ==============================
-export const getProfiles = async (req, res) => {
+const getProfiles = async (req, res) => {
   try {
-    // pagination
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
     const cappedLimit = Math.min(limit, 50);
     const skip = (page - 1) * cappedLimit;
 
-    // filters
     let filter = {};
 
     if (req.query.gender) filter.gender = req.query.gender;
@@ -28,61 +26,55 @@ export const getProfiles = async (req, res) => {
 
     if (req.query.min_gender_probability) {
       filter.gender_probability = {
-        $gte: Number(req.query.min_gender_probability)
+        $gte: Number(req.query.min_gender_probability),
       };
     }
 
     if (req.query.min_country_probability) {
       filter.country_probability = {
-        $gte: Number(req.query.min_country_probability)
+        $gte: Number(req.query.min_country_probability),
       };
     }
 
-    // sorting
     let sort = {};
     if (req.query.sort_by) {
       sort[req.query.sort_by] = req.query.order === "desc" ? -1 : 1;
     }
 
-    // total count
     const total = await Profile.countDocuments(filter);
 
-    // fetch data
     const data = await Profile.find(filter)
-      .select("-_id -__v") // remove Mongo fields
+      .select("-_id -__v")
       .sort(sort)
       .skip(skip)
       .limit(cappedLimit);
 
-    // response (STRICT FORMAT)
     return res.status(200).json({
       status: "success",
-      page: page,
+      page,
       limit: cappedLimit,
-      total: total,
-      data: Array.isArray(data) ? data : []
+      total,
+      data: Array.isArray(data) ? data : [],
     });
-
   } catch (err) {
     return res.status(500).json({
       status: "error",
-      message: err.message
+      message: err.message,
     });
   }
 };
 
-
 // ==============================
-// GET /api/profiles/search
+// GET /api/v1/profiles/search
 // ==============================
-export const searchProfiles = async (req, res) => {
+const searchProfiles = async (req, res) => {
   try {
     const { q } = req.query;
 
     if (!q || q.trim() === "") {
       return res.status(400).json({
         status: "error",
-        message: "Missing query"
+        message: "Missing query",
       });
     }
 
@@ -91,7 +83,7 @@ export const searchProfiles = async (req, res) => {
     if (Object.keys(parsed).length === 0) {
       return res.status(422).json({
         status: "error",
-        message: "Unable to interpret query"
+        message: "Unable to interpret query",
       });
     }
 
@@ -107,16 +99,13 @@ export const searchProfiles = async (req, res) => {
       if (parsed.max_age) filter.age.$lte = parsed.max_age;
     }
 
-    // pagination
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
     const cappedLimit = Math.min(limit, 50);
     const skip = (page - 1) * cappedLimit;
 
-    // total
     const total = await Profile.countDocuments(filter);
 
-    // fetch data
     const data = await Profile.find(filter)
       .select("-_id -__v")
       .skip(skip)
@@ -124,16 +113,47 @@ export const searchProfiles = async (req, res) => {
 
     return res.status(200).json({
       status: "success",
-      page: page,
+      page,
       limit: cappedLimit,
-      total: total,
-      data: Array.isArray(data) ? data : []
+      total,
+      data: Array.isArray(data) ? data : [],
     });
-
   } catch (err) {
     return res.status(500).json({
       status: "error",
-      message: err.message
+      message: err.message,
     });
   }
+};
+
+// ==============================
+// GET /api/v1/profiles/export (ADMIN)
+// ==============================
+const exportProfiles = async (req, res) => {
+  try {
+    const profiles = await Profile.find().select("-_id -__v");
+
+    const jsonData = profiles.map((p) => p.toObject());
+
+    const fields = Object.keys(jsonData[0] || {});
+    const parser = new Parser({ fields });
+
+    const csv = parser.parse(jsonData);
+
+    res.header("Content-Type", "text/csv");
+    res.attachment("profiles.csv");
+
+    return res.send(csv);
+  } catch (err) {
+    return res.status(500).json({
+      status: "error",
+      message: err.message,
+    });
+  }
+};
+
+module.exports = {
+  getProfiles,
+  searchProfiles,
+  exportProfiles,
 };

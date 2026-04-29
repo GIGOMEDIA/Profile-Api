@@ -1,22 +1,13 @@
-import dotenv from "dotenv";
-import mongoose from "mongoose";
+require("dotenv").config();
 
-dotenv.config();
-
-import app from "./src/app.js";
+const app = require("./src/app");
+const connectDB = require("./src/config/db"); // 👈 IMPORT DB
 
 const PORT = process.env.PORT || 5000;
 
-// ✅ CONNECT DB AFTER dotenv loads
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log("DB connected");
+// 🔥 CONNECT DATABASE FIRST
+connectDB();
 
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-
-  })
-  .catch((err) => {
-    console.error("DB connection error:", err.message);
-  });
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});

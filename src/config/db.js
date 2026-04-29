@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 
 let cached = global.mongoose;
 
@@ -6,7 +6,7 @@ if (!cached) {
   cached = global.mongoose = { conn: null, promise: null };
 }
 
-export const connectDB = async () => {
+const connectDB = async () => {
   if (cached.conn) return cached.conn;
 
   if (!process.env.MONGO_URI) {
@@ -21,11 +21,13 @@ export const connectDB = async () => {
 
   try {
     cached.conn = await cached.promise;
-    console.log("MongoDB connected");
+    console.log("✅ MongoDB connected");
     return cached.conn;
   } catch (err) {
-    console.error("MongoDB connection error:", err.message);
-    setTimeout(() => connectDB(), 5000);
+    console.error("❌ MongoDB connection error:", err.message);
+    setTimeout(connectDB, 5000);
     throw err;
   }
 };
+
+module.exports = connectDB;

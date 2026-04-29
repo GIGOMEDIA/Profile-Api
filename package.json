@@ -10,13 +10,20 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "module",
   "dependencies": {
-    "axios": "^1.15.0",
+    "axios": "^1.15.2",
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
+    "csurf": "^1.11.0",
     "dotenv": "^16.6.1",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.4.1",
+    "json2csv": "^6.0.0-alpha.2",
+    "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.4.1",
+    "morgan": "^1.10.1",
+    "qs": "^6.15.1",
     "uuid": "^13.0.0"
   },
   "devDependencies": {

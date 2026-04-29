@@ -1,19 +1,13 @@
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 
 const profileSchema = new mongoose.Schema({
-  id: { type: String, unique: true },
-  name: { type: String, unique: true },
-  gender: String,
-  gender_probability: Number,
+  name: String,
   age: Number,
-  age_group: String,
+  gender: String,
   country_id: String,
-  country_name: String,
+  age_group: String,
+  gender_probability: Number,
   country_probability: Number,
-  created_at: {
-    type: Date,
-    default: () => new Date()
-  }
 });
 
-export default mongoose.model("Profile", profileSchema);
+module.exports = mongoose.model("Profile", profileSchema);

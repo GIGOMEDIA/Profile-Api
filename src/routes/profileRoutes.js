@@ -1,12 +1,23 @@
-import express from "express";
-import {
-  getProfiles,
-  searchProfiles
-} from "../controllers/profileController.js";
-
+const express = require("express");
 const router = express.Router();
 
-router.get("/profiles", getProfiles);
-router.get("/profiles/search", searchProfiles);
+const {
+  getProfiles,
+  searchProfiles,
+  exportProfiles,
+} = require("../controllers/profileController");
 
-export default router;
+const auth = require("../middleware/auth.middleware");
+const { requireRole } = require("../middleware/role.middleware");
+
+// protect all routes
+router.use(auth);
+
+// routes
+router.get("/", getProfiles);
+router.get("/search", searchProfiles);
+
+// ADMIN ONLY EXPORT
+router.get("/export", requireRole("admin"), exportProfiles);
+
+module.exports = router;
