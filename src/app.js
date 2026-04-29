@@ -5,12 +5,12 @@ app.use(express.json());
 
 // ROUTES
 const profileRoutes = require("./routes/profileRoutes");
-const authRoutes = require("./routes/auth.routes");
+const authRoutes = require("./auth/auth.routes");
 
 app.use("/api/v1/profiles", profileRoutes);
 app.use("/api/v1/auth", authRoutes);
 
-// HEALTH CHECK
+// HEALTH
 app.get("/", (req, res) => {
   res.send("Insighta Labs+ API is running");
 });

@@ -1,19 +1,7 @@
 const express = require("express");
 const router = express.Router();
+const { login } = require("./auth.controller");
 
-const {
-  githubAuth,
-  githubCallback,
-  refresh,
-  logout,
-} = require("../controllers/auth.controller");
-
-// GitHub OAuth
-router.get("/github", githubAuth);
-router.get("/github/callback", githubCallback);
-
-// token lifecycle
-router.post("/refresh", refresh);
-router.post("/logout", logout);
+router.post("/login", login);
 
 module.exports = router;
